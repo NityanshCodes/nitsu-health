@@ -1,0 +1,6 @@
+models:
+  llm: gpt-4o
+  embeddings: text-embedding-3
+  classifiers:
+    - disease-detection
+    - nutrition-categorization

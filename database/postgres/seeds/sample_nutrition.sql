@@ -1,0 +1,2 @@
+-- Placeholder seed data.
+-- This file will later hold sample seed content.

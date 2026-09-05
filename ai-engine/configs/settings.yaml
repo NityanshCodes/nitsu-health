@@ -1,0 +1,5 @@
+settings:
+  temperature: 0.2
+  max_tokens: 1024
+  top_p: 0.8
+  vector_db: faiss

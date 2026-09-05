@@ -1,0 +1,6 @@
+prompts:
+  chatbot: chatbot/default_prompt.txt
+  nutrition: nutrition/default_prompt.txt
+  diagnosis: diagnosis/default_prompt.txt
+  reports: reports/default_prompt.txt
+  wearable: wearable/default_prompt.txt

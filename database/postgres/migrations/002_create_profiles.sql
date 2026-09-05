@@ -1,0 +1,2 @@
+-- Placeholder migration definition.
+-- This file will later hold the SQL for a migration step.

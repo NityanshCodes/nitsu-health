@@ -1,0 +1,2 @@
+-- Placeholder schema definition.
+-- This file will later hold the SQL for the corresponding entity.
