@@ -9,22 +9,40 @@ import {
 import "./App.css";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { useAuth } from "./context/AuthContext";
+import ActivityPage from "./pages/Activity";
 import AIPage from "./pages/AI";
+import AnalyticsPage from "./pages/Analytics";
 import DashboardPage from "./pages/Dashboard";
+import GoalsPage from "./pages/Goals";
+import HealthPage from "./pages/Health";
+import InsightsPage from "./pages/Insights";
 import LoginPage from "./pages/Login";
+import MedicalRecordsPage from "./pages/MedicalRecords";
+import NotificationsPage from "./pages/Notifications";
 import NutritionPage from "./pages/Nutrition";
+import OnboardingPage from "./pages/Onboarding";
 import ProfilePage from "./pages/Profile";
 import RegisterPage from "./pages/Register";
 import ReportsPage from "./pages/Reports";
+import SettingsPage from "./pages/Settings";
+import SleepPage from "./pages/Sleep";
+import SubscriptionPage from "./pages/Subscription";
 import WearablesPage from "./pages/Wearables";
 
 const navItems = [
   { to: "/dashboard", label: "Dashboard" },
-  { to: "/ai", label: "AI Assistant" },
+  { to: "/health", label: "Health" },
   { to: "/nutrition", label: "Nutrition" },
-  { to: "/wearables", label: "Wearables" },
+  { to: "/activity", label: "Activity" },
+  { to: "/sleep", label: "Sleep" },
+  { to: "/goals", label: "Goals" },
+  { to: "/ai", label: "AI Assistant" },
+  { to: "/insights", label: "Insights" },
   { to: "/reports", label: "Reports" },
-  { to: "/profile", label: "Profile" },
+  { to: "/medical-records", label: "Records" },
+  { to: "/notifications", label: "Alerts" },
+  { to: "/subscription", label: "Plan" },
+  { to: "/settings", label: "Settings" },
 ];
 
 function AppShell() {
@@ -84,6 +102,15 @@ function AppShell() {
         />
 
         <Route
+          path="/onboarding"
+          element={
+            <ProtectedRoute>
+              <OnboardingPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
           path="/dashboard"
           element={
             <ProtectedRoute>
@@ -92,10 +119,10 @@ function AppShell() {
           }
         />
         <Route
-          path="/ai"
+          path="/health"
           element={
             <ProtectedRoute>
-              <AIPage />
+              <HealthPage />
             </ProtectedRoute>
           }
         />
@@ -108,10 +135,50 @@ function AppShell() {
           }
         />
         <Route
-          path="/wearables"
+          path="/activity"
           element={
             <ProtectedRoute>
-              <WearablesPage />
+              <ActivityPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/sleep"
+          element={
+            <ProtectedRoute>
+              <SleepPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/goals"
+          element={
+            <ProtectedRoute>
+              <GoalsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ai"
+          element={
+            <ProtectedRoute>
+              <AIPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/insights"
+          element={
+            <ProtectedRoute>
+              <InsightsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/analytics"
+          element={
+            <ProtectedRoute>
+              <AnalyticsPage />
             </ProtectedRoute>
           }
         />
@@ -124,10 +191,50 @@ function AppShell() {
           }
         />
         <Route
+          path="/medical-records"
+          element={
+            <ProtectedRoute>
+              <MedicalRecordsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/notifications"
+          element={
+            <ProtectedRoute>
+              <NotificationsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/subscription"
+          element={
+            <ProtectedRoute>
+              <SubscriptionPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/wearables"
+          element={
+            <ProtectedRoute>
+              <WearablesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/profile"
           element={
             <ProtectedRoute>
               <ProfilePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute>
+              <SettingsPage />
             </ProtectedRoute>
           }
         />

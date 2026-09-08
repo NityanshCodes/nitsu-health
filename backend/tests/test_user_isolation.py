@@ -98,23 +98,26 @@ class TestUserIsolation:
         assert response.json()["title"] != "Private report"
 
     def test_user_b_cannot_see_user_a_wearable_data(self):
+        from app.models.wearable_connection import WearableConnection
+
         with engine.begin() as conn:
             conn.execute(
-                WearableData.__table__.insert(),
+                WearableConnection.__table__.insert(),
                 [{
                     "user_id": 1,
-                    "source": "fitbit",
-                    "metric_type": "steps",
-                    "metric_value": 15000,
-                    "unit": "count",
+                    "provider": "fitbit",
+                    "status": "connected",
+                    "access_token_enc": "secret_a",
                 }],
             )
 
+        # User B's status must not include User A's connection.
         response = self.client.get(
             "/wearables/status",
             headers={"Authorization": f"Bearer {self.token_b}"},
         )
         assert response.status_code == 200
         payload = response.json()
-        assert payload["user_id"] == 2
-        assert payload["provider"] in {"none", "not_connected", "demo"}
+        assert any(
+            c["provider"] == "fitbit" for c in payload["connections"]
+        ) is False

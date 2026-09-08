@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react";
 import { apiClient, type WearableStatusResponse } from "../services/api";
+import Card from "../components/ui/Card";
+import ErrorBox from "../components/ui/ErrorBox";
+import Spinner from "../components/ui/Spinner";
+import EmptyState from "../components/ui/EmptyState";
 
 export default function Wearables() {
   const [data, setData] = useState<WearableStatusResponse | null>(null);
@@ -13,9 +17,7 @@ export default function Wearables() {
         setData(result);
       } catch (err) {
         setError(
-          err instanceof Error
-            ? err.message
-            : "Wearable status is unavailable.",
+          err instanceof Error ? err.message : "Wearable status is unavailable.",
         );
       } finally {
         setLoading(false);
@@ -25,34 +27,75 @@ export default function Wearables() {
     void loadWearables();
   }, []);
 
+  async function handleConnect() {
+    try {
+      const { auth_url } = await apiClient.getWearableConnectUrl();
+      window.location.href = auth_url;
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to start Fitbit connection.",
+      );
+    }
+  }
+
   return (
     <main className="page-shell">
-      <section className="panel">
-        <p className="eyebrow">Wearables</p>
-        <h2>Integration status</h2>
-        {error ? <div className="error-box">{error}</div> : null}
+      <div className="page-header">
+        <div>
+          <p className="eyebrow">Wearables</p>
+          <h2>Integration status</h2>
+          <p className="muted">Connect Fitbit to sync your activity and sleep.</p>
+        </div>
+      </div>
 
-        {loading ? (
-          <p className="muted">Checking wearable connections…</p>
-        ) : data ? (
-          <div className="info-grid">
-            <div>
-              <p className="muted">Status</p>
-              <p>{data.status}</p>
-            </div>
-            <div>
-              <p className="muted">Provider</p>
-              <p>{data.provider}</p>
-            </div>
-            <div style={{ gridColumn: "1 / -1" }}>
-              <p className="muted">Message</p>
-              <p>{data.message}</p>
-            </div>
-          </div>
-        ) : (
-          <div className="warning-box">Integration not connected.</div>
-        )}
-      </section>
+      {error ? <ErrorBox message={error} /> : null}
+
+      {loading ? (
+        <Spinner label="Checking wearable connections…" />
+      ) : data ? (
+        <Card
+          title="Fitbit"
+          subtitle={
+            data.configured
+              ? "Configuration detected"
+              : data.config_note ?? "Not configured"
+          }
+          actions={
+            <button type="button" className="card-button" onClick={handleConnect}>
+              Connect
+            </button>
+          }
+        >
+          {data.connections.length === 0 ? (
+            <EmptyState
+              title="No connections yet"
+              message="Connect a Fitbit account to start syncing data."
+            />
+          ) : (
+            <ul className="metric-list">
+              {data.connections.map((c) => (
+                <li key={c.provider} className="metric-item">
+                  <span>{c.provider}</span>
+                  <strong className="muted">
+                    {c.status}
+                    {c.last_synced_at
+                      ? ` · last synced ${c.last_synced_at.slice(0, 10)}`
+                      : ""}
+                  </strong>
+                </li>
+              ))}
+            </ul>
+          )}
+          {!data.configured && (
+            <p className="warning-box">
+              Fitbit credentials are not configured on the server. Set
+              FITBIT_CLIENT_ID and FITBIT_CLIENT_SECRET to enable real syncing.
+            </p>
+          )}
+        </Card>
+      ) : (
+        <EmptyState title="No wearable status" />
+      )}
     </main>
   );
 }
