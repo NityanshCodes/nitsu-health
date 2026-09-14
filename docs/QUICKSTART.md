@@ -59,7 +59,7 @@ docker compose -f docker/docker-compose.yml up --build
 # Backend
 cd backend
 python -m pytest tests/ -q
-# Expected: 89 passed, 2 skipped
+# Expected: 88 passed, 2 skipped
 
 # Frontend build
 cd frontend

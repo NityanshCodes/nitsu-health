@@ -35,7 +35,7 @@ Requires the backend venv with `pytest` and `httpx` installed
 | `test_notifications.py` | list, mark read, mark all read |
 | `test_medical.py` | medical-record CRUD (multipart upload) |
 | `test_reports.py` | list + generate report |
-| `test_ai.py`, `test_ai_endpoint.py`, `test_ai_context.py`, `test_ai_provider.py`, `test_ai_proxy.py` | chat contract, context builder, provider factory/fallback |
+| `test_ai.py`, `test_ai_endpoint.py`, `test_ai_context.py`, `test_ai_provider.py` | chat contract, context builder, provider factory/fallback |
 | `test_insights_search.py` | insights generate/list/read, unified search |
 | `test_wearables.py` | connect/status/sync, 503 when unconfigured, Fitbit OAuth mocked |
 | `test_subscription_payments.py` | FREE/PREMIUM entitlements, payment create/verify/downgrade, webhook idempotency |

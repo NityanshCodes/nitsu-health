@@ -27,7 +27,7 @@
 # Run the full test suite
 cd backend
 PYTHONPATH=. python -m pytest tests -q
-# Expected: 89 passed, 2 skipped
+# Expected: 88 passed, 2 skipped
 
 # Check for security issues in dependencies
 pip-audit

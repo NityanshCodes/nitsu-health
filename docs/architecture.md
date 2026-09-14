@@ -27,19 +27,19 @@
   limiter (disabled in tests).
 - **Utilities:** `backend/app/utils/` — audit logging (`log_action`), JWT auth
   helpers (`get_current_user`, `get_db`).
-- **Tests:** `backend/tests/` — 89 passing + 2 skipped (OpenAI provider tests; httpx
+- **Tests:** `backend/tests/` — 88 passing + 2 skipped (OpenAI provider tests; httpx
   not in test venv). Fixtures in `conftest.py` use in-memory SQLite + `StaticPool`
   for per-test isolation.
 
 ## Frontend — React + TypeScript + Vite
 
 - **Framework:** React 19, TypeScript, Vite 8, React Router.
-- **State:** Zustand for client state.
+- **State:** Page-local `useState` + `AuthContext` for auth state.
 - **Styling:** Plain CSS with design tokens (`src/styles/tokens.css`). No Tailwind.
 - **UI kit:** `src/components/ui/` — reusable `Button`, `Card`, `Input`, `Select`,
-  `Textarea`, `Modal`, `Spinner`, `EmptyState`, `ErrorBox`, `Stat`, `PageHeader`.
-- **API layer:** `src/services/api.ts` (Axios core with JWT interceptor) plus
-  domain-specific service modules under `src/services/`.
+  `Modal`, `Spinner`, `EmptyState`, `ErrorBox`, `Stat`, `PageHeader`.
+- **API layer:** `src/services/api.ts` — single Axios core with JWT interceptor and
+  all endpoint calls. No separate service modules.
 - **Pages:** One component per route — Landing, Onboarding, Dashboard, Health,
   Nutrition, Activity, Sleep, Goals, Medical Records, Reports, AI Assistant,
   Insights, Notifications, Subscription, Settings, Profile.
