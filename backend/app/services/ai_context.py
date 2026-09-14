@@ -5,6 +5,13 @@ from typing import Any, Dict, Optional
 
 from sqlalchemy.orm import Session
 
+from app.models.activity import ActivityEntry
+from app.models.goal import HealthGoal
+from app.models.health_metric import HealthMetric
+from app.models.medical_record import MedicalRecord
+from app.models.nutrition import NutritionEntry
+from app.models.profile import HealthProfile
+from app.models.sleep import SleepEntry
 from app.models.user import User
 from app.schemas.ai import AIContextSummary
 
@@ -13,21 +20,13 @@ class AIContextBuilder:
     """Builds context for AI requests by gathering user's health data.
 
     Only fetches data belonging to the authenticated user.
-    Calculates derived metrics to reduce unnecessary data.
+    Never includes secrets or other users' data.
     """
 
     def __init__(self, db: Session):
         self.db = db
 
     def build_context(self, user: User) -> AIContextSummary:
-        """Build a sanitized health context for the authenticated user.
-
-        Args:
-            user: The authenticated User object
-
-        Returns:
-            AIContextSummary with only relevant, user-specific data
-        """
         return AIContextSummary(
             user_id=user.id,
             name=user.first_name or user.username,
@@ -40,55 +39,95 @@ class AIContextBuilder:
         )
 
     def _calculate_age(self, date_of_birth: datetime) -> Optional[int]:
-        """Calculate age from date of birth."""
         if not date_of_birth:
             return None
         today = datetime.utcnow()
         return today.year - date_of_birth.year - ((today.month, today.day) < (date_of_birth.month, date_of_birth.day))
 
     def _get_recent_vitals(self, user_id: int) -> Optional[Dict[str, Any]]:
-        """Get recent vital signs (if available in database).
-
-        This is a placeholder. In production, fetch from wearables/health tracking models.
-        """
-        # TODO: Query wearable_data or vitals table when implemented
-        # For now, return None to show we checked but have no data
-        return None
+        week_ago = datetime.utcnow() - timedelta(days=7)
+        metrics = (
+            self.db.query(HealthMetric)
+            .filter(HealthMetric.user_id == user_id, HealthMetric.recorded_at >= week_ago)
+            .order_by(HealthMetric.recorded_at.desc())
+            .limit(10)
+            .all()
+        )
+        if not metrics:
+            return None
+        vitals: Dict[str, Any] = {}
+        for m in metrics:
+            key = m.metric_type
+            if key not in vitals:
+                vitals[key] = {"value": m.value, "unit": m.unit, "recorded_at": str(m.recorded_at)}
+        return vitals
 
     def _get_nutrition_summary(self, user_id: int) -> Optional[Dict[str, Any]]:
-        """Get nutrition summary (if available in database).
-
-        This is a placeholder. In production, summarize meals logged.
-        """
-        # TODO: Query nutrition/meal entries, calculate totals/averages
-        return None
+        today_start = datetime.combine(datetime.utcnow().date(), datetime.min.time())
+        today_end = datetime.combine(datetime.utcnow().date(), datetime.max.time())
+        entries = (
+            self.db.query(NutritionEntry)
+            .filter(
+                NutritionEntry.user_id == user_id,
+                NutritionEntry.consumed_at >= today_start,
+                NutritionEntry.consumed_at <= today_end,
+            )
+            .all()
+        )
+        if not entries:
+            return None
+        return {
+            "entries_today": len(entries),
+            "calories": round(sum(e.calories for e in entries), 1),
+            "protein_g": round(sum(e.protein_g for e in entries), 1),
+            "carbs_g": round(sum(e.carbs_g for e in entries), 1),
+            "fats_g": round(sum(e.fats_g for e in entries), 1),
+        }
 
     def _get_health_goals(self, user_id: int) -> Optional[list]:
-        """Get user's health goals (if available in database).
-
-        This is a placeholder. In production, fetch from goals model.
-        """
-        # TODO: Query goals model
-        return None
+        goals = (
+            self.db.query(HealthGoal)
+            .filter(HealthGoal.user_id == user_id, HealthGoal.status == "active")
+            .limit(5)
+            .all()
+        )
+        if not goals:
+            return None
+        return [
+            {
+                "title": g.title,
+                "target": f"{g.target_value} {g.unit}",
+                "progress": f"{g.progress_value} {g.unit}",
+            }
+            for g in goals
+        ]
 
     def _get_medical_notes_summary(self, user_id: int) -> Optional[str]:
-        """Get summary of recent medical records (if available).
+        # Health profile
+        profile = self.db.query(HealthProfile).filter(HealthProfile.user_id == user_id).first()
+        parts = []
+        if profile:
+            if profile.medical_conditions:
+                parts.append(f"Conditions: {profile.medical_conditions}")
+            if profile.allergies:
+                parts.append(f"Allergies: {profile.allergies}")
+            if profile.medications:
+                parts.append(f"Medications: {profile.medications}")
 
-        This is a placeholder. In production, summarize medical records.
-        """
-        # TODO: Query medical_records model, extract recent entries
-        return None
+        # Recent medical records
+        recent_records = (
+            self.db.query(MedicalRecord)
+            .filter(MedicalRecord.user_id == user_id)
+            .order_by(MedicalRecord.created_at.desc())
+            .limit(3)
+            .all()
+        )
+        for r in recent_records:
+            parts.append(f"Record: {r.title} ({r.category})")
+
+        return "; ".join(parts) if parts else None
 
     def build_prompt(self, question: str, context: AIContextSummary) -> str:
-        """Build a complete prompt for the AI with context and safety instructions.
-
-        Args:
-            question: The user's question
-            context: The health context
-
-        Returns:
-            A complete prompt with safety instructions
-        """
         context_part = ""
         if context.name:
             context_part += f"User: {context.name}\n"
@@ -102,6 +141,8 @@ class AIContextBuilder:
             context_part += f"Nutrition Summary: {context.nutrition_summary}\n"
         if context.health_goals:
             context_part += f"Health Goals: {context.health_goals}\n"
+        if context.medical_notes:
+            context_part += f"Medical Notes: {context.medical_notes}\n"
 
         safety_instructions = (
             "IMPORTANT: You are a health information assistant, not a doctor.\n"
@@ -112,11 +153,9 @@ class AIContextBuilder:
             "- If the user asks for medical advice, recommend they consult a qualified healthcare professional.\n"
         )
 
-        prompt = (
+        return (
             f"{safety_instructions}\n"
             f"User Context:\n{context_part}\n"
             f"User Question: {question}\n"
             f"Provide a helpful, cautious response based on the context and question."
         )
-
-        return prompt

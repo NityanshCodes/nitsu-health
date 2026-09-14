@@ -5,7 +5,10 @@ import os
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional
 
-import httpx
+try:  # httpx is only needed by the real-network OpenAI provider
+    import httpx
+except ImportError:  # pragma: no cover - optional dependency for constrained environments
+    httpx = None  # type: ignore
 
 
 class AIProvider(ABC):
@@ -42,15 +45,17 @@ class OpenAIProvider(AIProvider):
         self.model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
         self._client: Optional[httpx.AsyncClient] = None
 
-    async def _get_client(self) -> httpx.AsyncClient:
+    async def _get_client(self) -> httpx.AsyncClient:  # type: ignore[return-value]
         """Get or create async HTTP client."""
+        if httpx is None:
+            raise ValueError("httpx is not installed; it is required for the OpenAI provider")
         if self._client is None:
             self._client = httpx.AsyncClient(timeout=30.0)
         return self._client
 
     def is_configured(self) -> bool:
         """Check if OpenAI API key is set."""
-        return bool(self.api_key)
+        return bool(self.api_key) and httpx is not None
 
     async def generate(self, prompt: str, context: Optional[Dict[str, Any]] = None) -> str:
         """Generate response using OpenAI API."""

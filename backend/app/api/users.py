@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.database.database import get_db
 from app.schemas.auth import ChangePasswordRequest, UpdateProfileRequest, UserResponse
 from app.services.auth_service import change_password, get_user_by_id, update_profile
+from app.utils.audit import log_action
 from app.utils.auth import get_current_user
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -30,5 +31,9 @@ def change_password_route(
     current_user=Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> dict[str, str]:
-    change_password(db, current_user, data)
+    try:
+        change_password(db, current_user, data)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    log_action(db, "auth.password_change", user_id=current_user.id)
     return {"message": "password updated"}

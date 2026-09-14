@@ -17,6 +17,7 @@ class NutritionEntry(Base):
     protein_g: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
     carbs_g: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
     fats_g: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
+    fiber_g: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
     water_ml: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     consumed_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)

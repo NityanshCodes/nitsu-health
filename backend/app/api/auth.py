@@ -1,27 +1,44 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from app.database.database import get_db
 from app.schemas.auth import ChangePasswordRequest, LoginRequest, RegisterRequest, TokenResponse, UpdateProfileRequest, UserResponse
 from app.services.auth_service import authenticate_user, change_password, create_access_token, register_user, update_profile
+from app.utils.audit import log_action
+from app.utils.ratelimit import RateLimitDependency
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
+login_limiter = RateLimitDependency(max_requests=20)
+register_limiter = RateLimitDependency(max_requests=10)
+
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-def register(data: RegisterRequest, db: Session = Depends(get_db)) -> UserResponse:
+def register(
+    data: RegisterRequest,
+    request: Request,
+    _: None = Depends(register_limiter),
+    db: Session = Depends(get_db),
+) -> UserResponse:
     try:
         user = register_user(db, data)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    log_action(db, "auth.register", user_id=user.id, ip_address=request.client.host if request.client else None)
     return UserResponse.model_validate(user)
 
 
 @router.post("/login", response_model=TokenResponse)
-def login(data: LoginRequest, db: Session = Depends(get_db)) -> TokenResponse:
+def login(
+    data: LoginRequest,
+    request: Request,
+    _: None = Depends(login_limiter),
+    db: Session = Depends(get_db),
+) -> TokenResponse:
     user = authenticate_user(db, data)
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid credentials")
+    log_action(db, "auth.login", user_id=user.id, ip_address=request.client.host if request.client else None)
     token = create_access_token(user)
     return TokenResponse(access_token=token)
 

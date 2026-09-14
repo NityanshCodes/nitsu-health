@@ -19,7 +19,7 @@
 - [ ] Password validation is enforced (8+ chars, uppercase, lowercase, digit)
 - [ ] Database backups are automated
 - [ ] HTTPS is enforced for all endpoints
-- [ ] Rate limiting is configured (recommended via nginx or load balancer)
+- [ ] Rate limiting is configured (built-in via `RATE_LIMIT_ENABLED`)
 
 ### Backend Verification
 
@@ -27,7 +27,7 @@
 # Run the full test suite
 cd backend
 PYTHONPATH=. python -m pytest tests -q
-# Expected: 34 passed
+# Expected: 88 passed, 2 skipped
 
 # Check for security issues in dependencies
 pip-audit
@@ -59,31 +59,37 @@ grep -r "VITE_OPENAI_API_KEY\|VITE_JWT_SECRET" src/
 
 #### Using Docker (Recommended)
 
-```dockerfile
-# Dockerfile
-FROM python:3.9-slim
-
-WORKDIR /app
-COPY backend/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-COPY backend/ .
-ENV PYTHONUNBUFFERED=1
-EXPOSE 8000
-
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
-```
-
-Build and run:
+The repository ships a compose stack in `docker/docker-compose.yml` (Postgres +
+backend + frontend, healthchecks, a persistent Postgres volume, and an `.env`
+wiring). Build and run:
 
 ```bash
-docker build -t nitsu-health-backend .
+cp .env.example .env          # set secrets first
+docker compose -f docker/docker-compose.yml up --build
+```
+
+The backend image (`docker/backend.Dockerfile`, `python:3.11-slim`) runs
+`alembic upgrade head` before starting uvicorn, so the schema is applied
+automatically on startup.
+
+If you prefer to run the backend image directly:
+
+```bash
+docker build -f docker/backend.Dockerfile -t nitsu-health-backend .
 docker run -e DATABASE_URL="postgresql://..." \
            -e JWT_SECRET_KEY="..." \
            -e OPENAI_API_KEY="..." \
            -e AI_PROVIDER="openai" \
            -p 8000:8000 \
            nitsu-health-backend
+```
+
+**Always apply migrations before serving traffic** (the compose command does
+this for you). Manually:
+
+```bash
+cd backend
+alembic upgrade head
 ```
 
 #### Using systemd (for VPS)
@@ -174,7 +180,7 @@ server {
 2. Connect repository to Vercel/Netlify
 3. Set build command: `npm run build`
 4. Set output directory: `dist`
-5. Set environment variable: `VITE_API_URL=https://api.yourdomain.com`
+5. Set environment variable: `VITE_API_BASE_URL=https://api.yourdomain.com`
 6. Deploy
 
 ### 3. Database Setup
@@ -330,7 +336,7 @@ python -m pytest tests -v
 curl -H "Origin: https://yourdomain.com" http://localhost:8000/health
 
 # Verify API URL
-# In browser console: console.log(import.meta.env.VITE_API_URL)
+# In browser console: console.log(import.meta.env.VITE_API_BASE_URL)
 
 # Check backend is running
 curl http://localhost:8000/health
@@ -365,13 +371,10 @@ sqlite3 nitsu_health.db "PRAGMA database_list;"
 
 ### Additional Recommendations
 
-1. **Rate Limiting** - Add via nginx or implement in-app:
-
-```python
-from slowapi import Limiter
-limiter = Limiter(key_func=get_remote_address)
-app.state.limiter = limiter
-```
+1. **Rate Limiting** — already implemented in-app (`app/middleware/rate_limit.py`).
+   Enable via `RATE_LIMIT_ENABLED=true` and tune with `RATE_LIMIT_WINDOW_SECONDS`
+   and `RATE_LIMIT_MAX_REQUESTS`. For additional front-line protection, consider
+   nginx or a WAF in front.
 
 2. **HTTPS/TLS** - Use Let's Encrypt
 

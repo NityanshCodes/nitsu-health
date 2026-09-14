@@ -1,3 +1,7 @@
+> ⚠️ **Superseded** — this was the original pre-rebuild feature roadmap. Most items
+> listed here are now implemented. See [DEVELOPMENT_STATE.md](DEVELOPMENT_STATE.md)
+> for the current state.
+
 # Project Roadmap
 
 ## Phase 1 — Foundation

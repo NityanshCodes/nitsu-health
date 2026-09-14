@@ -1,8 +1,22 @@
 """Tests for AI provider abstraction."""
 
+import asyncio
+import importlib.util
+
 import pytest
 
 from app.services.ai_provider import AIProviderFactory, DevelopmentProvider, OpenAIProvider
+
+_HTTPX_AVAILABLE = importlib.util.find_spec("httpx") is not None
+
+
+def _run(coro):
+    """Run a coroutine to completion without relying on a pre-existing loop.
+
+    asyncio.get_event_loop() is deprecated (and raises) on Python 3.12+ when
+    there is no running loop, so use asyncio.run().
+    """
+    return asyncio.run(coro)
 
 
 class TestAIProviderFactory:
@@ -19,6 +33,7 @@ class TestAIProviderFactory:
         provider = AIProviderFactory.get_provider()
         assert isinstance(provider, DevelopmentProvider)
 
+    @pytest.mark.skipif(not _HTTPX_AVAILABLE, reason="httpx not installed; OpenAI provider is unavailable")
     def test_factory_returns_openai_with_key(self, monkeypatch):
         """Test that factory returns OpenAIProvider when OPENAI_API_KEY is set."""
         monkeypatch.setenv("OPENAI_API_KEY", "sk-test-key-12345")
@@ -29,6 +44,7 @@ class TestAIProviderFactory:
 class TestOpenAIProvider:
     """Test OpenAI provider configuration."""
 
+    @pytest.mark.skipif(not _HTTPX_AVAILABLE, reason="httpx not installed; OpenAI provider is unavailable")
     def test_openai_is_configured_with_key(self, monkeypatch):
         """Test that OpenAI provider reports configured=True when key exists."""
         monkeypatch.setenv("OPENAI_API_KEY", "sk-test-key")
@@ -53,14 +69,13 @@ class TestOpenAIProvider:
         provider = OpenAIProvider()
         assert provider.model == "gpt-4o-mini"
 
-    @pytest.mark.asyncio
-    async def test_openai_generate_raises_without_key(self):
+    def test_openai_generate_raises_without_key(self):
         """Test that generate raises ValueError when API key is missing."""
         provider = OpenAIProvider()
         # Force unconfigured state
         provider.api_key = None
         with pytest.raises(ValueError, match="OPENAI_API_KEY"):
-            await provider.generate("test prompt")
+            _run(provider.generate("test prompt"))
 
 
 class TestDevelopmentProvider:
@@ -71,18 +86,16 @@ class TestDevelopmentProvider:
         provider = DevelopmentProvider()
         assert provider.is_configured() is True
 
-    @pytest.mark.asyncio
-    async def test_development_generate_works(self):
+    def test_development_generate_works(self):
         """Test that development provider generates responses."""
         provider = DevelopmentProvider()
-        response = await provider.generate("What is my health status?")
+        response = _run(provider.generate("What is my health status?"))
         assert response is not None
         assert "Development Mode" in response or "development" in response.lower()
 
-    @pytest.mark.asyncio
-    async def test_development_includes_context(self):
+    def test_development_includes_context(self):
         """Test that development provider acknowledges context when provided."""
         provider = DevelopmentProvider()
         context = {"name": "Alice", "age": 30}
-        response = await provider.generate("How should I exercise?", context=context)
+        response = _run(provider.generate("How should I exercise?", context=context))
         assert "Alice" in response or "context" in response.lower() or "Development" in response
