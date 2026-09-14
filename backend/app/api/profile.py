@@ -53,6 +53,18 @@ def create_family_history(
     return FamilyHistoryResponse.model_validate(entry)
 
 
+@router.get("/family-history/{entry_id}", response_model=FamilyHistoryResponse)
+def get_family_history(
+    entry_id: int,
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> FamilyHistoryResponse:
+    entry = profile_service.get_family_history(db, current_user, entry_id)
+    if entry is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Family history entry not found")
+    return FamilyHistoryResponse.model_validate(entry)
+
+
 @router.put("/family-history/{entry_id}", response_model=FamilyHistoryResponse)
 def update_family_history(
     entry_id: int,

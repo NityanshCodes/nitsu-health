@@ -34,6 +34,10 @@ def list_family_history(db: Session, user: User) -> list[FamilyHistory]:
     return db.query(FamilyHistory).filter(FamilyHistory.user_id == user.id).order_by(FamilyHistory.id).all()
 
 
+def get_family_history(db: Session, user: User, entry_id: int) -> Optional[FamilyHistory]:
+    return db.query(FamilyHistory).filter(FamilyHistory.id == entry_id, FamilyHistory.user_id == user.id).first()
+
+
 def create_family_history(db: Session, user: User, data) -> Optional[FamilyHistory]:
     entry = FamilyHistory(
         user_id=user.id,

@@ -8,7 +8,7 @@ def test_user_me(client, user_token):
     assert resp.status_code == 200
     data = resp.json()
     assert data["email"]
-    assert data["role"] == "USER"
+    assert data["role"] == "user"
     assert data["is_active"] is True
 
 

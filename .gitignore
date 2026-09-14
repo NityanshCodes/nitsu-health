@@ -10,6 +10,8 @@ __pycache__/
 coverage/
 *.sqlite3
 *.db
+# in-memory SQLite shared-cache handle created when tests run from backend/
+file:testdb
 
 # Node
 node_modules/

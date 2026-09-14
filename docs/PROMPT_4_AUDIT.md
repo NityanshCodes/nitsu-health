@@ -1,3 +1,6 @@
+> ⚠️ **Historical snapshot** — written during the Prompt 4 hardening phase
+> (pre-rebuild). Current state is tracked in [DEVELOPMENT_STATE.md](DEVELOPMENT_STATE.md).
+
 # Prompt 4 Audit - Production Foundation
 
 ## Status

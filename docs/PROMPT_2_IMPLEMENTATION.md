@@ -1,3 +1,6 @@
+> ⚠️ **Historical snapshot** — written during the Prompt 2 phase (pre-rebuild).
+> Current state is tracked in [DEVELOPMENT_STATE.md](DEVELOPMENT_STATE.md).
+
 # NITSU Health — Prompt 2 Implementation Report
 
 ## Executive Summary

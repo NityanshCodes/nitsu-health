@@ -47,7 +47,7 @@ def test_family_history_crud(client, user_token):
     create = client.post(
         "/profile/family-history",
         headers=auth(user_token),
-        json={"category": "DIABETES", "relation": "Father", "notes": "Type 2"},
+        json={"category": "diabetes", "relation": "Father", "notes": "Type 2"},
     )
     assert create.status_code == 201
     fid = create.json()["id"]
@@ -68,8 +68,8 @@ def test_family_history_crud(client, user_token):
     )
     assert update.json()["relation"] == "Mother"
 
-    # Delete
-    assert client.delete(f"/profile/family-history/{fid}", headers=auth(user_token)).status_code == 200
+    # Delete (204 No Content)
+    assert client.delete(f"/profile/family-history/{fid}", headers=auth(user_token)).status_code == 204
     assert len(client.get("/profile/family-history", headers=auth(user_token)).json()) == 0
 
 
@@ -81,7 +81,7 @@ def test_profile_scoped(client, user_token):
     client.post(
         "/profile/family-history",
         headers=auth(user_token),
-        json={"category": "HYPERTENSION", "relation": "Parent"},
+        json={"category": "hypertension", "relation": "Parent"},
     )
 
     other_profile = client.get("/profile", headers=auth(other_token)).json()

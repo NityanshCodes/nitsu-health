@@ -2,9 +2,15 @@
 
 import os
 
-# Must be set before importing app modules.
-os.environ.setdefault("DATABASE_URL", "sqlite:///./test_main.db")
-os.environ.setdefault("ENVIRONMENT", "test")
+# Use an in-memory SQLite with a shared cache so all connections see the same data.
+# The app reads DATABASE_URL at import time, so set it first.
+os.environ["DATABASE_URL"] = "sqlite:///file:testdb?mode=memory&cache=shared"
+os.environ["ENVIRONMENT"] = "test"
+# The rate limiter keeps per-process in-memory counters. Across a full suite run
+# the auth endpoints would exceed the window limit and start returning 429,
+# which is not what these tests are exercising. Rate limiting has dedicated
+# coverage in test_rate_limit.py, which enables it explicitly.
+os.environ["RATE_LIMIT_ENABLED"] = "false"
 
 import pytest
 from fastapi.testclient import TestClient
@@ -14,10 +20,17 @@ from app.database.database import engine
 from app.main import app
 
 
-@pytest.fixture()
-def client():
+@pytest.fixture(autouse=True)
+def _reset_db():
+    """Drop and recreate every table before each test for clean isolation."""
     Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
+    yield
+    Base.metadata.drop_all(bind=engine)
+
+
+@pytest.fixture()
+def client():
     return TestClient(app)
 
 
@@ -51,6 +64,7 @@ def admin_token(client):
     )
     # Promote to admin directly in DB
     from sqlalchemy.orm import sessionmaker
+
     from app.models.user import User
 
     Session = sessionmaker(bind=engine)

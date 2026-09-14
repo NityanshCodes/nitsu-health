@@ -3,7 +3,7 @@
 import secrets
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Body, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from app.database.database import get_db
@@ -66,14 +66,24 @@ async def create_order(
     }
 
 
+from pydantic import BaseModel as _PydanticModel
+
+
+class _PaymentVerifyBody(_PydanticModel):
+    razorpay_order_id: str
+    razorpay_payment_id: str
+    signature: str
+
+
 @router.post("/verify")
 async def verify_payment(
-    razorpay_order_id: str,
-    razorpay_payment_id: str,
-    signature: str,
+    body: _PaymentVerifyBody = Body(...),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> dict:
+    razorpay_order_id = body.razorpay_order_id
+    razorpay_payment_id = body.razorpay_payment_id
+    signature = body.signature
     provider = _get_provider()
     verified = provider.verify_payment(razorpay_order_id, razorpay_payment_id, signature)
 

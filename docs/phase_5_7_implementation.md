@@ -1,3 +1,6 @@
+> ⚠️ **Historical snapshot** — written during an intermediate rebuild phase.
+> All phases are now fully implemented. See [DEVELOPMENT_STATE.md](DEVELOPMENT_STATE.md).
+
 # Phase 5–7 Implementation Summary
 
 ## Phase 5 — AI & Intelligence
