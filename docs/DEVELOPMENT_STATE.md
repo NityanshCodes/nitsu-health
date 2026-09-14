@@ -2,7 +2,7 @@
 
 **Last updated:** 2026-09-13
 **Current branch:** `rebuild/full-platform-checkpoint`
-**Last commit:** `1ae20f0` (checkpoint) + local working tree changes staged
+**Last commit:** `5f51ff9` (docs reconciliation) on top of `1ae20f0` (rebuild checkpoint)
 
 ---
 
@@ -86,6 +86,6 @@ Then verify PR CI passes.
 | Docs | ✅ Complete |
 | Docker compose | ✅ Updated |
 | Env examples | ✅ Complete |
-| Git state | Staged, ready to commit/push |
+| Git state | ✅ Committed (`5f51ff9`), working tree clean |
 
 **Safe to sleep.** Nothing broken. All verification green.
